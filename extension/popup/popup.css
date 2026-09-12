@@ -1,0 +1,86 @@
+:root{
+  --bg:#10141c; --panel:#181d28; --line:#28303f; --ink:#e8ecf4; --muted:#8b95a9;
+  --accent:#6ee7a8; --accent-ink:#04150c; --danger:#ff7a7a; --warn:#ffc46b; --info:#7cc4ff;
+}
+*{box-sizing:border-box}
+body{
+  width:340px; margin:0; padding:0; background:var(--bg); color:var(--ink);
+  font:13.5px/1.5 ui-sans-serif,-apple-system,"Segoe UI",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.muted{color:var(--muted)}
+
+header{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:11px 15px; border-bottom:1px solid var(--line);
+}
+.brand{display:flex; align-items:center; gap:8px; font-size:13px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
+.chip{
+  font:10.5px/1 ui-monospace,Menlo,monospace; color:var(--muted);
+  border:1px solid var(--line); border-radius:5px; padding:4px 7px;
+}
+
+.view{padding:16px 15px 18px}
+h1{margin:0 0 6px; font-size:16px; letter-spacing:-.015em}
+.view > p{margin:0 0 15px; font-size:12.5px; color:var(--muted)}
+
+button{font:inherit; cursor:pointer; border-radius:9px; transition:.14s; width:100%}
+button:disabled{opacity:.5; cursor:not-allowed}
+.primary{background:var(--accent); color:var(--accent-ink); border:0; padding:10px 16px; font-weight:600}
+.primary:hover:not(:disabled){filter:brightness(1.08)}
+.primary.danger{background:var(--danger); color:#2a0808}
+.ghost{background:transparent; color:var(--muted); border:1px solid var(--line); padding:9px 14px}
+.ghost:hover{color:var(--ink); border-color:#3a4358}
+.ghost.small{margin-top:9px; padding:7px 12px; font-size:12px}
+.danger-ghost:hover{color:var(--danger); border-color:#5f2b2b}
+
+#qr{display:block; width:100%; border-radius:11px; background:#fff; margin-bottom:13px}
+
+.status{display:flex; align-items:center; gap:9px; font-size:12.5px; color:var(--muted); margin-bottom:13px}
+.spinner{
+  width:12px;height:12px;border-radius:50%;
+  border:2px solid var(--line); border-top-color:var(--accent);
+  animation:spin .8s linear infinite; flex:none;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.notice{
+  margin-top:12px; padding:9px 11px; border-radius:9px; font-size:12px;
+  border:1px solid var(--line); background:#12161f; color:var(--muted);
+}
+.notice.warn{border-color:#6b5330; background:#1f1810; color:#ffd9a0}
+.notice.bad{border-color:#6b3030; background:#1f1113; color:#ffc0c0}
+.notice.good{border-color:#2c6b4c; background:#0f2119; color:#b8f0d0}
+
+.field{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:11px; font-size:12.5px}
+.field input{
+  width:88px; background:#12161f; border:1px solid var(--line); color:var(--ink);
+  border-radius:8px; padding:8px 10px; font:600 13px/1 ui-monospace,Menlo,monospace;
+}
+.field input:focus{outline:0; border-color:var(--accent)}
+
+.name{
+  font:11.5px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace; color:var(--accent);
+  background:#0f1620; border:1px solid var(--line); border-radius:8px;
+  padding:9px 11px; margin-bottom:13px; word-break:break-all;
+}
+
+.facts{margin:0 0 14px; display:grid; gap:0}
+.facts > div{display:flex; justify-content:space-between; gap:12px; padding:7px 0; border-top:1px solid var(--line)}
+.facts > div:first-child{border-top:0}
+.facts dt{margin:0; color:var(--muted); font-size:12px}
+.facts dd{margin:0; text-align:right; font-size:12.5px; font-weight:500}
+.facts dd.ok{color:var(--accent)} .facts dd.bad{color:var(--danger)} .facts dd.warn{color:var(--warn)}
+
+.perm{border:1px solid var(--line); border-radius:9px; padding:10px 11px; margin-bottom:14px}
+.perm-head{font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:7px}
+.perm ul{list-style:none; margin:0; padding:0}
+.perm li{display:flex; justify-content:space-between; gap:10px; padding:3px 0; font-size:11.5px}
+.perm li .who{color:var(--muted)}
+.perm li .yes{color:var(--accent)} .perm li .no{color:var(--danger)}
+.perm li code{font:11px/1 ui-monospace,Menlo,monospace; color:#7f8899}
+
+.actions{display:grid; gap:8px}
+.link{display:block; margin-top:12px; font-size:11.5px; color:var(--info); text-decoration:none}
+.link:hover{text-decoration:underline}

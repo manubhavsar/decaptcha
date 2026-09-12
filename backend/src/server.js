@@ -6,6 +6,7 @@ import { issueChallenge, challengeStats } from './lib/challenge.js';
 import { handleClaim } from './lib/gate.js';
 import { vouchBackendStatus } from './lib/vouch.js';
 import { worldStatus, startSelfieCheck, pollSelfieCheck } from './lib/world.js';
+import QRCode from 'qrcode';
 import {
   DROP, remaining, claimCount, allClaims,
   recentLog, onEvent, resetDemo, logEvent,
@@ -82,7 +83,18 @@ app.get('/api/world/status', (_req, res) => {
 app.post('/api/world/selfie-check/start', async (req, res) => {
   try {
     const signal = String(req.body?.signal ?? '').slice(0, 96) || `anon-${Date.now()}`;
-    res.json(await startSelfieCheck({ signal }));
+    const out = await startSelfieCheck({ signal });
+
+    // The QR is rendered here rather than in the extension so the popup needs
+    // no bundled library and stays within the default MV3 content-security
+    // policy. Desktop users scan it; the connector URI is also returned for
+    // same-device deep linking.
+    if (out.connectorURI) {
+      out.qrDataUrl = await QRCode.toDataURL(out.connectorURI, {
+        margin: 1, width: 320, color: { dark: '#0b0d12', light: '#ffffff' },
+      });
+    }
+    res.json(out);
   } catch (e) {
     if (e.name === 'WorldNotReady') {
       return res.status(503).json({ error: 'world_not_configured', ...e.status });

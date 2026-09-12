@@ -1,0 +1,27 @@
+#decaptcha-badge{
+  position:fixed; right:18px; bottom:18px; z-index:2147483647;
+  display:flex; align-items:flex-start; gap:11px;
+  min-width:262px; max-width:340px; padding:13px 15px;
+  border-radius:13px; border:1px solid #2a3140; background:#151a24; color:#e8ecf4;
+  font:13px/1.45 ui-sans-serif,-apple-system,"Segoe UI",system-ui,sans-serif;
+  box-shadow:0 12px 34px rgba(0,0,0,.45);
+  flex-wrap:wrap;
+}
+#decaptcha-badge .dc-dot{font-size:15px; line-height:1.3; color:#8b95a9}
+#decaptcha-badge .dc-text{flex:1; min-width:0}
+#decaptcha-badge .dc-title{font-weight:600; letter-spacing:-.01em}
+#decaptcha-badge .dc-sub{color:#8b95a9; margin-top:2px; font-size:12px}
+#decaptcha-badge .dc-name{
+  flex-basis:100%; margin-top:8px; padding-top:8px; border-top:1px solid #2a3140;
+  font:11px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; color:#7f8899;
+  word-break:break-all;
+}
+#decaptcha-badge .dc-name:empty{display:none}
+
+#decaptcha-badge.dc-vouched{border-color:#2c6b4c; background:#0f2119}
+#decaptcha-badge.dc-vouched .dc-dot{color:#6ee7a8}
+#decaptcha-badge.dc-blocked{border-color:#6b3030; background:#1f1113}
+#decaptcha-badge.dc-blocked .dc-dot{color:#ff7a7a}
+#decaptcha-badge.dc-revoked{border-color:#6b5330; background:#1f1810}
+#decaptcha-badge.dc-revoked .dc-dot{color:#ffc46b}
+#decaptcha-badge.dc-held .dc-dot{color:#7cc4ff}

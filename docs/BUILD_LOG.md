@@ -98,3 +98,30 @@ holds nothing anywhere.
 **Next:** register the parent name, then mint a vouch subname with its own
 Permissioned Resolver and Enhanced-Access-Control-gated writes. Needs a funded
 Sepolia burner key.
+
+### decaptcha.eth registered ✅
+
+Live on ENSv2 Sepolia.
+
+| | |
+| --- | --- |
+| Name | `decaptcha.eth` |
+| Owner | `0xF3c024c70De326C14296A4D74fc4Be9aB817265C` |
+| Child registry | `0xCd55B677A38A89804c84677EaFB789eCd876c0ef` |
+| Registration tx | `0xaa1cbcf5a2ed0ef1603bcb2188748d7aac3817b4086532abdf664877d4456b4d` |
+| Term | 1 year |
+
+The parent is registered with **no resolver of its own**, deliberately. Each
+vouch subname gets its own Permissioned Resolver at mint time, which is what
+makes a vouch self-owned rather than a row in a shared table.
+
+Two things the registrar demanded that the docs did not lead with:
+
+- Registration is **commit/reveal** with a 60s minimum commitment age, so the
+  script has to wait between two transactions.
+- Payment is in an **ERC20**, and the price oracle's `available` argument is a
+  Dutch-auction decay window. Passing `0` prices a never-registered name at a
+  ~100,000,000 USDC premium. The registrar itself passes `block.timestamp` for
+  a name that was never registered, which decays the premium to zero. Anyone
+  pricing off-chain without reading `_availablePeriod` will get a wild number
+  and assume they cannot afford the name.

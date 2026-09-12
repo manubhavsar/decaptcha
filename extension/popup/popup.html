@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="popup.css" />
+<title>deCAPTCHA</title>
+</head>
+<body>
+
+<header>
+  <div class="brand"><span class="dot"></span><strong>deCAPTCHA</strong></div>
+  <span id="chain" class="chip">…</span>
+</header>
+
+<!-- 1. No credential yet -->
+<section id="view-start" class="view">
+  <h1>Vouch for your agent</h1>
+  <p class="muted">
+    One quick liveness check, and your agent gets accountable access to gated
+    actions — capped, expiring, and revocable by you at any moment.
+  </p>
+  <div id="world-unavailable" class="notice" hidden></div>
+  <button id="begin" class="primary">Start Selfie Check</button>
+</section>
+
+<!-- 2. Selfie Check in flight -->
+<section id="view-check" class="view" hidden>
+  <h1>Scan with World App</h1>
+  <p class="muted">Complete the Selfie Check on your phone.</p>
+  <img id="qr" alt="Scan to complete Selfie Check in World App" />
+  <div id="sim-note" class="notice warn" hidden></div>
+  <div class="status"><span class="spinner"></span><span id="check-status">Waiting for your phone…</span></div>
+  <button id="cancel-check" class="ghost">Cancel</button>
+</section>
+
+<!-- 3. Verified, choose the scope -->
+<section id="view-mint" class="view" hidden>
+  <h1>Set what your agent may do</h1>
+  <p class="muted">This is written on chain and is the ceiling on its access.</p>
+
+  <label class="field">
+    <span>Claims allowed</span>
+    <input id="scope" type="number" min="1" max="10" value="1" />
+  </label>
+  <label class="field">
+    <span>Expires in (hours)</span>
+    <input id="ttl" type="number" min="1" max="168" value="24" />
+  </label>
+
+  <button id="mint" class="primary">Mint vouch on Sepolia</button>
+  <div id="mint-status" class="notice" hidden></div>
+</section>
+
+<!-- 4. Live vouch -->
+<section id="view-vouch" class="view" hidden>
+  <h1>Vouch active</h1>
+  <div class="name" id="vouch-name"></div>
+
+  <dl class="facts">
+    <div><dt>Scope</dt><dd id="f-scope">—</dd></div>
+    <div><dt>Expires</dt><dd id="f-expiry">—</dd></div>
+    <div><dt>Credential</dt><dd id="f-cred">—</dd></div>
+    <div><dt>Status</dt><dd id="f-status">—</dd></div>
+  </dl>
+
+  <div class="perm">
+    <div class="perm-head">Write permission, read from ENSv2</div>
+    <ul id="perm-rows"></ul>
+  </div>
+
+  <div class="actions">
+    <button id="self-extend" class="ghost danger-ghost">Agent: try to extend scope</button>
+    <button id="revoke" class="primary danger">Revoke now</button>
+  </div>
+  <div id="action-status" class="notice" hidden></div>
+
+  <a id="explorer" class="link" target="_blank" rel="noopener">View resolver on Etherscan →</a>
+  <button id="forget" class="ghost small">Forget this vouch</button>
+</section>
+
+<script src="popup.js"></script>
+</body>
+</html>

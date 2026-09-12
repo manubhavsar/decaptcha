@@ -1,0 +1,49 @@
+{
+  "manifest_version": 3,
+  "name": "deCAPTCHA \u2014 human-vouched agent access",
+  "version": "0.1.0",
+  "description": "Prove a real human is accountable for your agent. Scoped, expiring, revocable \u2014 enforced by ENSv2 on Sepolia.",
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "http://localhost:8787/*"
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "deCAPTCHA"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://localhost:8787/*"
+      ],
+      "js": [
+        "content/inject.js"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "http://localhost:8787/*"
+      ],
+      "js": [
+        "content/content.js"
+      ],
+      "css": [
+        "content/badge.css"
+      ],
+      "run_at": "document_idle",
+      "world": "ISOLATED"
+    }
+  ],
+  "icons": {
+    "128": "icons/icon128.png"
+  }
+}

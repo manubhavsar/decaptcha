@@ -1,0 +1,10 @@
+{
+  "parent": "decaptcha.eth",
+  "label": "decaptcha",
+  "owner": "0xF3c024c70De326C14296A4D74fc4Be9aB817265C",
+  "parentRegistry": "0xCd55B677A38A89804c84677EaFB789eCd876c0ef",
+  "registryFromFactory": "0xCd55B677A38A89804c84677EaFB789eCd876c0ef",
+  "registerTx": "0xaa1cbcf5a2ed0ef1603bcb2188748d7aac3817b4086532abdf664877d4456b4d",
+  "registeredAt": "2026-09-12T12:48:27.045Z",
+  "durationYears": 1
+}
