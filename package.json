@@ -13,7 +13,8 @@
   },
   "dependencies": {
     "@worldcoin/idkit-core": "^4.2.4",
-    "express": "^4.21.2"
+    "express": "^4.21.2",
+    "viem": "^2.56.3"
   },
   "engines": {
     "node": ">=20"
