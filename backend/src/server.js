@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { issueChallenge, challengeStats } from './lib/challenge.js';
 import { handleClaim } from './lib/gate.js';
 import { vouchBackendStatus } from './lib/vouch.js';
+import { worldStatus, startSelfieCheck, pollSelfieCheck } from './lib/world.js';
 import {
   DROP, remaining, claimCount, allClaims,
   recentLog, onEvent, resetDemo, logEvent,
@@ -65,6 +66,47 @@ app.post('/api/claim', async (req, res) => {
 
   const status = result.outcome === 'allow' ? 200 : result.outcome === 'challenge' ? 401 : 403;
   res.status(status).json(result);
+});
+
+
+/* ------------------------- World ID — Selfie Check ------------------------ */
+/* Used as an abuse-prevention signal, which is what World documents Selfie
+   Check for. See lib/world.js for why a medium-assurance credential is the
+   right assurance level for this gate rather than a compromise. */
+
+app.get('/api/world/status', (_req, res) => {
+  res.json(worldStatus());
+});
+
+app.post('/api/world/selfie-check/start', async (req, res) => {
+  try {
+    const signal = String(req.body?.signal ?? '').slice(0, 96) || `anon-${Date.now()}`;
+    res.json(await startSelfieCheck({ signal }));
+  } catch (e) {
+    if (e.name === 'WorldNotReady') {
+      return res.status(503).json({ error: 'world_not_configured', ...e.status });
+    }
+    res.status(500).json({ error: 'world_request_failed', detail: e.message });
+  }
+});
+
+app.get('/api/world/selfie-check/:requestId', async (req, res) => {
+  try {
+    const out = await pollSelfieCheck(req.params.requestId);
+    if (out.state === 'verified') {
+      logEvent({
+        outcome: 'info',
+        reason: 'selfie_check_verified',
+        detail: out.credential.simulated
+          ? 'SIMULATED Selfie Check passed (build aid, not a real World credential).'
+          : `Selfie Check passed. Human accountable, credential ${out.credential.credentialRef}.`,
+        actor: 'human',
+      });
+    }
+    res.json(out);
+  } catch (e) {
+    res.status(500).json({ error: 'world_poll_failed', detail: e.message });
+  }
 });
 
 /* ------------------------------- live gate log --------------------------- */

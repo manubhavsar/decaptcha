@@ -8,7 +8,8 @@
     "dev": "node backend/src/server.js",
     "start": "node backend/src/server.js",
     "bot": "node bots/raw-bot.js",
-    "reset": "curl -s -X POST http://localhost:8787/api/demo/reset | cat"
+    "reset": "curl -s -X POST http://localhost:8787/api/demo/reset | cat",
+    "test": "node --test test/*.test.js"
   },
   "dependencies": {
     "@worldcoin/idkit-core": "^4.2.4",
