@@ -1,0 +1,17 @@
+{
+  "name": "decaptcha",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A CAPTCHA that blocks anonymous bots but lets through agents carrying a revocable, scoped vouch from a verified human.",
+  "scripts": {
+    "dev": "node backend/src/server.js",
+    "start": "node backend/src/server.js",
+    "bot": "node bots/raw-bot.js",
+    "reset": "curl -s -X POST http://localhost:8787/api/demo/reset | cat"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  },
+  "engines": { "node": ">=20" }
+}
