@@ -141,7 +141,7 @@ export async function handleClaim(req) {
       outcome: decision.outcome,
       reason: decision.reason,
       detail: decision.detail,
-      actor: req.actorLabel ?? (req.vouchName ? `agent (${req.vouchName})` : 'anonymous'),
+      actor: req.vouchName ? `agent (${req.vouchName})` : (req.actorLabel ?? 'anonymous'),
       vouchName: req.vouchName ?? null,
     });
     return { ...decision, remaining: remaining() };
@@ -161,7 +161,9 @@ export async function handleClaim(req) {
     outcome: Outcome.ALLOW,
     reason: req.vouchName ? 'vouch_valid' : 'human_verified',
     detail: decision.detail,
-    actor: req.actorLabel ?? (req.vouchName ? `agent (${req.vouchName})` : 'human'),
+    // The client does not get to say who it is. A request carrying a vouch is
+    // an agent acting for someone, whatever label it chose to send.
+    actor: req.vouchName ? `agent (${req.vouchName})` : (req.actorLabel ?? 'human'),
     vouchName: req.vouchName ?? null,
     actingFor: decision.vouch?.humanLabel ?? null,
     serial: claim.serial,

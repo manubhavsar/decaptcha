@@ -11,7 +11,7 @@
  * cached.
  */
 
-import { readVouch, ensStatus, canWriteRecord } from './ens.js';
+import { readVouch, ensStatus, canWriteRecords } from './ens.js';
 import { VOUCH_KEYS } from './ens-config.js';
 
 export async function resolveVouch(name) {
@@ -46,23 +46,22 @@ export async function permissionReport(vouch) {
   ].filter((a) => a.address);
 
   const keys = [VOUCH_KEYS.scope, VOUCH_KEYS.expiry, VOUCH_KEYS.revoked];
-  const rows = [];
 
-  for (const a of accounts) {
-    for (const key of keys) {
-      rows.push({
-        account: a.label,
-        address: a.address,
-        key,
-        canWrite: await canWriteRecord({
-          resolverAddress: vouch.resolverAddress,
-          node: vouch.node,
-          key,
-          account: a.address,
-        }),
-      });
-    }
-  }
+  // One multicall rather than a read per cell. Six sequential round trips took
+  // long enough that the table lagged visibly behind the rest of the page.
+  const checks = accounts.flatMap((a) => keys.map((key) => ({ account: a, key })));
+  const results = await canWriteRecords({
+    resolverAddress: vouch.resolverAddress,
+    node: vouch.node,
+    checks: checks.map(({ account, key }) => ({ account: account.address, key })),
+  });
+
+  const rows = checks.map(({ account, key }, i) => ({
+    account: account.label,
+    address: account.address,
+    key,
+    canWrite: results[i],
+  }));
 
   return { resolverAddress: vouch.resolverAddress, resolverUrl: vouch.resolverUrl, rows };
 }

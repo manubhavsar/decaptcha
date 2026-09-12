@@ -178,14 +178,25 @@ export async function readVouch(name) {
  * address returns false here, and that its write therefore reverts inside
  * ENSv2's permission check rather than being turned away by the gate.
  */
-export async function canWriteRecord({ resolverAddress, node, key, account }) {
+export async function canWriteRecords({ resolverAddress, node, checks }) {
   const c = ensClient();
-  if (!c) return null;
-  const resource = vouchResource(node, key);
-  return c.readContract({
-    address: resolverAddress,
-    abi: RESOLVER_ABI,
-    functionName: 'hasRoles',
-    args: [resource, RESOLVER_ROLES.SET_TEXT, account],
+  if (!c) return checks.map(() => null);
+
+  const results = await c.multicall({
+    contracts: checks.map(({ account, key }) => ({
+      address: resolverAddress,
+      abi: RESOLVER_ABI,
+      functionName: 'hasRoles',
+      args: [vouchResource(node, key), RESOLVER_ROLES.SET_TEXT, account],
+    })),
+    allowFailure: true,
   });
+
+  return results.map((r) => (r.status === 'success' ? Boolean(r.result) : null));
+}
+
+/** Single-cell convenience wrapper over {@link canWriteRecords}. */
+export async function canWriteRecord({ resolverAddress, node, key, account }) {
+  const [only] = await canWriteRecords({ resolverAddress, node, checks: [{ account, key }] });
+  return only;
 }
