@@ -170,3 +170,58 @@ because the gate never had one.
 The issuer renounces its own root roles as the last step of minting. So the
 final state is stronger than "only the human can write": *nobody* but the human
 can, including the people who built this. That is checkable by anyone.
+
+---
+
+## Step 7 — Chrome extension ✅ (logic verified; not yet loaded in Chrome)
+
+**What exists**
+
+| Piece | Path |
+| --- | --- |
+| MV3 manifest | `extension/manifest.json` |
+| Background service worker | `extension/background.js` |
+| Popup | `extension/popup/` |
+| MAIN-world fetch patch | `extension/content/inject.js` |
+| Badge + gate listener | `extension/content/content.js` |
+
+**How it was verified without Chrome**
+
+The in-app browser cannot open `chrome://` pages, so `test/extension.test.js`
+loads the real `background.js` behind a Chrome API shim and drives it against
+the running gate and live Sepolia. Ten tests pass, including that the agent
+holds no write role anywhere on its own credential and that the self-extension
+refusal carries `EACUnauthorizedAccountRoles`.
+
+The complete popup path was then driven through that same worker end to end:
+Selfie Check → credential stored → mint on Sepolia → permission table →
+self-extension denied → revoke on chain.
+
+The content script's `fetch` patch was verified separately by evaluating the
+shipped code in the real demo page: the page's own claim call was intercepted,
+the vouch header attached, and the gate admitted it with no CAPTCHA. The demo
+page's code is untouched and knows nothing about vouches.
+
+**Still to do:** load it at `chrome://extensions` with developer mode on and
+confirm the assembled thing. Every part has been exercised; the assembly has
+not.
+
+**Minting performance:** three transactions, roughly 45s. The grants and the
+issuer's renunciation share one multicall. Each step is pushed onto the live
+log so the popup shows real progress rather than a guessed bar.
+
+---
+
+## Step 8 — World feedback document ✅ (two sections need the account holder)
+
+`docs/WORLD_FEEDBACK.md`. Grounded in what was actually done; two sections are
+marked incomplete rather than invented, because we never got Selfie Check
+access and the Portal critique needs the account holder's own experience.
+
+---
+
+## Remaining
+
+**Only World.** The integration is written and unit-tested and needs three
+environment variables plus the feature flag. Everything downstream of it —
+minting, scope, expiry, revocation, the denial — is built and proven live.
