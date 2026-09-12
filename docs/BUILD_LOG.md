@@ -57,3 +57,44 @@ the `hidden` attribute, so the dialog stayed up after a successful claim.
 ---
 
 ## Step 2 — World Selfie Check (human path) — next
+
+**Status:** backend plumbing complete and unit-tested (8 tests). Blocked on two
+World approvals that are not self-serve — the Selfie Check feature flag and
+sandbox tester access. See `docs/WORLD_INTEGRATION_NOTES.md`.
+
+What is written and waiting on credentials: RP request signing, request
+creation with the `selfieCheckLegacy` preset, polling, portal verification, and
+nullifier replay protection. Three environment variables away from running.
+
+---
+
+## Step 3 — ENSv2 vouches on Sepolia (read path ✅, write path next)
+
+**Verified live**
+
+- All twelve ENSv2 contract addresses checked with `eth_getCode` on chain
+  (`scripts/preflight.js`), not trusted from a table.
+- Resolution round-trips against Sepolia in roughly 300-600ms with no cache.
+- Names that do not exist return no resolver; `test.eth` resolves but is
+  correctly reported as *not a vouch* because it carries no scope record.
+- `decaptcha.eth` is available on ENSv2 Sepolia and is the intended parent.
+
+**Design**
+
+See `docs/ENS_ARCHITECTURE.md`. The load-bearing find is that
+`PermissionedResolver` scopes Enhanced Access Control resources to
+`keccak256(node, part)` — a name *and* a record type — so the human can hold
+write permission on one specific record of one specific vouch while the agent
+holds nothing anywhere.
+
+**Traps recorded**
+
+- Two ENSv2 deployments are live on Sepolia simultaneously. The `deployments/`
+  folder on contracts-v2 `main` is older than the set the docs pin, and both
+  have bytecode, so picking wrong fails late.
+- Registration is commit/reveal and priced in an ERC20, not ETH. On Sepolia the
+  payment token is a mock whose `mint` is public, so it costs nothing real.
+
+**Next:** register the parent name, then mint a vouch subname with its own
+Permissioned Resolver and Enhanced-Access-Control-gated writes. Needs a funded
+Sepolia burner key.

@@ -56,6 +56,7 @@ app.post('/api/claim', async (req, res) => {
 
   const result = await handleClaim({
     vouchName,
+    agentAddress: body.agentAddress ?? null,
     challengeId: body.challengeId ?? null,
     answer: body.answer ?? null,
     behavior: body.behavior ?? null,

@@ -1,49 +1,68 @@
 /**
- * Vouch resolution.
+ * Vouch resolution — now live against ENSv2 on Sepolia.
  *
- * ==== STEP 1 PLACEHOLDER — NOT YET WIRED TO ENS ====
+ * This module is deliberately thin. It exists so the gate has one place to ask
+ * "is there a valid vouch behind this request?", and so that place is provably
+ * a chain read rather than a lookup in our own state.
  *
- * In the finished build this module resolves a vouch subname (e.g.
- * agent123.decaptcha.eth) live against ENSv2 on Sepolia and reads its scope,
- * expiry and revocation flag from that subname's own Permissioned Resolver.
- * Nothing about a vouch is stored in this process — that is the point. The
- * human's revoke is an on-chain write, and the gate must see it on the very
- * next request without any server-side cache to invalidate.
- *
- * Right now it always reports "no vouch found", because step 1 of the build is
- * the pre-blockchain baseline: prove that a raw bot script gets blocked by an
- * ordinary CAPTCHA gate. Presenting a vouch name at this stage correctly gets
- * you treated as an anonymous bot. There are no hard-coded demo vouches here
- * and there will not be any — ENS's track rules require every resolution and
- * permission check to run live against Sepolia.
- *
- * Contract this must satisfy once wired (step 3):
- *
- *   resolveVouch(name) -> {
- *     found:          boolean,
- *     humanLabel:     string,   // display name for the accountable human
- *     humanCredential:string,   // reference to the World Selfie Check credential
- *     scopeMaxClaims: number,   // how many claims the human authorised
- *     expiresAt:      string,   // ISO8601
- *     expired:        boolean,
- *     revoked:        boolean,
- *     source:         string,   // 'ensv2-sepolia' once live
- *   }
+ * There are no hard-coded vouch values here. Scope, expiry, revocation status
+ * and the credential reference all come out of the vouch subname's own
+ * Permissioned Resolver on every call — see lib/ens.js for why nothing is
+ * cached.
  */
 
+import { readVouch, ensStatus, canWriteRecord } from './ens.js';
+import { VOUCH_KEYS } from './ens-config.js';
+
 export async function resolveVouch(name) {
-  return {
-    found: false,
-    name,
-    source: 'not-implemented',
-    note: 'ENSv2 resolution lands in build step 3.',
-  };
+  return readVouch(name);
 }
 
 export function vouchBackendStatus() {
+  const s = ensStatus();
   return {
-    wired: false,
-    source: 'not-implemented',
-    note: 'Step 1 baseline: CAPTCHA gate only, no chain calls.',
+    wired: s.wired,
+    source: s.wired ? 'ensv2-sepolia' : 'not-configured',
+    chainId: s.chainId,
+    parentName: s.parentName,
+    cached: false,
+    note: s.wired
+      ? 'Vouches are read live from ENSv2 on Sepolia on every request.'
+      : 'SEPOLIA_RPC_URL is not set; every presented vouch resolves to nothing.',
   };
+}
+
+/**
+ * Proof, straight from the chain, that the agent has no write permission on
+ * its own credential. Powers the accountability beat in the UI: we show the
+ * judges the permission check itself, not our interpretation of it.
+ */
+export async function permissionReport(vouch) {
+  if (!vouch?.found || !vouch.resolverAddress) return null;
+
+  const accounts = [
+    { label: 'human (voucher)', address: vouch.humanAddress },
+    { label: 'agent (credential holder)', address: vouch.agentAddress },
+  ].filter((a) => a.address);
+
+  const keys = [VOUCH_KEYS.scope, VOUCH_KEYS.expiry, VOUCH_KEYS.revoked];
+  const rows = [];
+
+  for (const a of accounts) {
+    for (const key of keys) {
+      rows.push({
+        account: a.label,
+        address: a.address,
+        key,
+        canWrite: await canWriteRecord({
+          resolverAddress: vouch.resolverAddress,
+          node: vouch.node,
+          key,
+          account: a.address,
+        }),
+      });
+    }
+  }
+
+  return { resolverAddress: vouch.resolverAddress, resolverUrl: vouch.resolverUrl, rows };
 }

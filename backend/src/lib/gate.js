@@ -38,6 +38,7 @@ function allow(detail, extra = {}) {
 /**
  * @param {object} req
  * @param {string|null} req.vouchName    ENS vouch subname presented as a credential, if any
+ * @param {string|null} req.agentAddress The address the presenting agent controls
  * @param {string|null} req.challengeId
  * @param {string|null} req.answer
  * @param {object|null} req.behavior     { elapsedMs, pointerSamples }
@@ -71,6 +72,17 @@ export async function evaluateClaim(req) {
       return block(
         'vouch_expired',
         `${req.vouchName} expired at ${vouch.expiresAt}.`,
+        { vouchName: req.vouchName, vouch },
+      );
+    }
+
+    // Non-transferable. The vouch names the agent it was minted for, so handing
+    // the subname to a different agent does not hand over the access.
+    if (vouch.agentAddress && req.agentAddress
+        && vouch.agentAddress.toLowerCase() !== req.agentAddress.toLowerCase()) {
+      return block(
+        'vouch_wrong_agent',
+        `${req.vouchName} was minted for ${vouch.agentAddress}, not ${req.agentAddress}. A vouch is not transferable.`,
         { vouchName: req.vouchName, vouch },
       );
     }
