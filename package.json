@@ -11,7 +11,10 @@
     "reset": "curl -s -X POST http://localhost:8787/api/demo/reset | cat"
   },
   "dependencies": {
+    "@worldcoin/idkit-core": "^4.2.4",
     "express": "^4.21.2"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }
