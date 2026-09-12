@@ -98,9 +98,30 @@ async function beginCheck() {
 
 /* -------------------------------- minting -------------------------------- */
 
+/* Minting is three Sepolia transactions and takes about 45 seconds. The
+   backend pushes each step onto the gate's live log, so the popup follows that
+   rather than showing an invented progress bar. */
+function followMintProgress(el) {
+  const started = Date.now();
+  let latest = 'Starting…';
+
+  const es = new EventSource('http://localhost:8787/api/stream');
+  es.onmessage = (m) => {
+    const msg = JSON.parse(m.data);
+    if (msg.type === 'gate' && msg.entry.reason === 'vouch_minting') latest = msg.entry.detail;
+  };
+
+  const tick = setInterval(() => {
+    notice(el, `${latest}  ·  ${Math.round((Date.now() - started) / 1000)}s`);
+  }, 500);
+
+  return () => { clearInterval(tick); es.close(); };
+}
+
 async function mint() {
   $('mint').disabled = true;
-  notice($('mint-status'), 'Deploying this vouch its own Permissioned Resolver and writing the record…');
+  notice($('mint-status'), 'Starting…');
+  const stopFollowing = followMintProgress($('mint-status'));
   try {
     const out = await send('mintVouch', {
       scopeMaxClaims: Number($('scope').value),
@@ -111,6 +132,7 @@ async function mint() {
   } catch (e) {
     notice($('mint-status'), e.message, 'bad');
   } finally {
+    stopFollowing();
     $('mint').disabled = false;
   }
 }

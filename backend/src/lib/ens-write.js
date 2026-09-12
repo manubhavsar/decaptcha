@@ -86,15 +86,16 @@ export function vouchWriteStatus() {
 /**
  * Mints one vouch.
  *
- * Four transactions, in an order that matters:
+ * Three transactions, in an order that matters:
  *   1. deploy the vouch's own resolver, pre-populated in the same call
  *      (PermissionedResolver skips permission checks while initializing, so
  *      the records can be written before anyone holds a role over them)
  *   2. register the subname in the parent's registry, pointed at that resolver
- *   3. grant the human write access to the records they control
- *   4. renounce the issuer's own root roles
+ *   3. grant the human their write access and renounce ours, batched
  *
- * Step 3 must precede step 4: granting requires roles we are about to give up.
+ * Three transactions rather than four: the grants and the renunciation both
+ * target this resolver, so one multicall covers them. Within that batch the
+ * renunciation must come last, since granting needs the roles being given up.
  */
 export async function mintVouch({ credential, scopeMaxClaims = 1, ttlHours = 24, onStep = () => {} }) {
   const d = deployment();
@@ -117,7 +118,7 @@ export async function mintVouch({ credential, scopeMaxClaims = 1, ttlHours = 24,
   };
 
   /* 1. the vouch's own resolver, populated in the same transaction */
-  onStep({ step: 1, of: 4, detail: 'Deploying this vouch its own Permissioned Resolver' });
+  onStep({ step: 1, of: 3, detail: 'Deploying this vouch its own Permissioned Resolver' });
 
   const setters = Object.entries(records).map(([key, value]) =>
     encodeFunctionData({ abi: RESOLVER_ABI, functionName: 'setText', args: [node, key, value] }));
@@ -140,7 +141,7 @@ export async function mintVouch({ credential, scopeMaxClaims = 1, ttlHours = 24,
   await pub.waitForTransactionReceipt({ hash: h1 });
 
   /* 2. the subname itself, owned by the human, pointed at that resolver */
-  onStep({ step: 2, of: 4, detail: `Registering ${fullName}`, resolverAddress });
+  onStep({ step: 2, of: 3, detail: `Registering ${fullName}`, resolverAddress });
 
   const h2 = await wallet.writeContract({
     address: d.parentRegistry, abi: REGISTRY_ABI, functionName: 'register',
@@ -149,27 +150,27 @@ export async function mintVouch({ credential, scopeMaxClaims = 1, ttlHours = 24,
   });
   await pub.waitForTransactionReceipt({ hash: h2 });
 
-  /* 3. the human's write access, per record */
-  onStep({ step: 3, of: 4, detail: 'Granting the human write access to scope, expiry and revocation' });
+  /* 3. the human's write access, then the issuer steps back — one transaction.
+        Both target this resolver, and multicall preserves the caller, so the
+        grants and the renunciation can share a block. Ordering inside the
+        batch matters: granting requires the very roles being given up, so the
+        renunciation has to come last. */
+  onStep({ step: 3, of: 3, detail: 'Granting the human write access, then renouncing our own' });
 
-  const grants = HUMAN_WRITABLE.map((key) =>
-    encodeFunctionData({
+  const finalise = [
+    ...HUMAN_WRITABLE.map((key) => encodeFunctionData({
       abi: RESOLVER_ABI, functionName: 'authorizeTextRoles',
       args: [dnsName, key, a.human.account.address, true],
-    }));
+    })),
+    encodeFunctionData({
+      abi: RESOLVER_ABI, functionName: 'revokeRootRoles',
+      args: [ALL_ROLES, a.deployer.account.address],
+    }),
+  ];
   const h3 = await wallet.writeContract({
-    address: resolverAddress, abi: RESOLVER_ABI, functionName: 'multicall', args: [grants],
+    address: resolverAddress, abi: RESOLVER_ABI, functionName: 'multicall', args: [finalise],
   });
   await pub.waitForTransactionReceipt({ hash: h3 });
-
-  /* 4. the issuer steps back */
-  onStep({ step: 4, of: 4, detail: 'Issuer renouncing its own root roles on this resolver' });
-
-  const h4 = await wallet.writeContract({
-    address: resolverAddress, abi: RESOLVER_ABI, functionName: 'revokeRootRoles',
-    args: [ALL_ROLES, a.deployer.account.address],
-  });
-  await pub.waitForTransactionReceipt({ hash: h4 });
 
   return {
     vouchName: fullName,
@@ -180,9 +181,7 @@ export async function mintVouch({ credential, scopeMaxClaims = 1, ttlHours = 24,
     agentAddress: a.agent.account.address,
     scopeMaxClaims,
     expiresAt: new Date(expirySeconds * 1000).toISOString(),
-    txs: {
-      deployResolver: h1, registerSubname: h2, grantHuman: h3, renounceIssuer: h4,
-    },
+    txs: { deployResolver: h1, registerSubname: h2, grantAndRenounce: h3 },
   };
 }
 

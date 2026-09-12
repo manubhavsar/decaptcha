@@ -148,6 +148,15 @@ app.post('/api/vouch/mint', async (req, res) => {
       credential: req.body?.credential ?? null,
       scopeMaxClaims: Math.max(1, Math.min(10, Number(req.body?.scopeMaxClaims) || 1)),
       ttlHours: Math.max(1, Math.min(168, Number(req.body?.ttlHours) || 24)),
+      // Minting takes about 45s across three Sepolia transactions. Pushing each
+      // step onto the live log means the popup and the demo page both show real
+      // progress from the real source, instead of a spinner that guesses.
+      onStep: ({ step, of, detail }) => logEvent({
+        outcome: 'info',
+        reason: 'vouch_minting',
+        detail: `[${step}/${of}] ${detail}`,
+        actor: 'human',
+      }),
     });
     logEvent({
       outcome: 'info',

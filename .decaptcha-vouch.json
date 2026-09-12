@@ -1,16 +1,15 @@
 {
-  "vouchName": "agentmtyeqqar.decaptcha.eth",
-  "node": "0xf69fafa7d2679268c2083346b406d950aab4791e65c6183a862422bcd3bf4b27",
-  "resolverAddress": "0x3ecde291633f1AEc7559bBd5caDcf5C1675e58b0",
-  "resolverUrl": "https://sepolia.etherscan.io/address/0x3ecde291633f1AEc7559bBd5caDcf5C1675e58b0",
+  "vouchName": "agentmtyuuja2.decaptcha.eth",
+  "node": "0x4d660670eaf4ba79c96dded842db4600b3f7c50d5c8c4e6cebb80e0151d9b031",
+  "resolverAddress": "0xDcEC2b8533C69b7b5E7C381839B85049095A7612",
+  "resolverUrl": "https://sepolia.etherscan.io/address/0xDcEC2b8533C69b7b5E7C381839B85049095A7612",
   "humanAddress": "0x33D7a534838d0e66FAD93D1F30Ed5fDe4B517a8e",
   "agentAddress": "0x58B84C789BdCD74c6D339B5f7745384c0a0D82ee",
-  "scopeMaxClaims": 3,
-  "expiresAt": "2026-09-14T13:15:09.000Z",
+  "scopeMaxClaims": 2,
+  "expiresAt": "2026-09-13T20:46:00.000Z",
   "txs": {
-    "deployResolver": "0xb5c4e570bcc820058838258d7be4841e0d6fd05e4459a9dc8beff0fa4fe7a697",
-    "registerSubname": "0x620bbee2b457329adefd46daa064d27d802b5a2de57125a4366c7ba710377636",
-    "grantHuman": "0xfc6f358d4b6f3144e404145587da660c9d4cbffb0cd6d208472e1ee16a5a1019",
-    "renounceIssuer": "0x32b5417ca3736c8a080fec5e1f69f176642fc6dae080737383892b06d001dc39"
+    "deployResolver": "0xd8f9b425319e00f181032b41b983097cd307352514ddaf5ddd4bca23b82f88aa",
+    "registerSubname": "0xafc2501b2555da6cc73897e7f17aa5ec8053bc8011b3fb8c7533cb056941c3e5",
+    "grantAndRenounce": "0x7546bef8ed4359506f151ebe4ed8c5c2c1730ff5e93a8bbf1ce5a83925ee4ced"
   }
 }
