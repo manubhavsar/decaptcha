@@ -10,61 +10,95 @@
 
 <header class="topbar">
   <div class="brand">
-    <span class="dot"></span>
-    <strong>dropzone</strong>
-    <span class="muted">limited drops, one per person</span>
+    <span class="pulse"></span>
+    dropzone
+    <span class="sub">limited drops · one per person</span>
   </div>
-  <button id="reset" class="ghost" title="Reset inventory and gate log">reset demo</button>
+  <div class="bar-right">
+    <span id="chain-tag" class="tag">checking chain…</span>
+    <button id="reset" class="btn-ghost btn-sm">Reset demo</button>
+  </div>
 </header>
 
 <main>
-  <section class="drop card">
-    <div class="drop-art" aria-hidden="true">
-      <div class="drop-art-inner">FP</div>
-    </div>
+  <div class="col">
 
-    <div class="drop-body">
-      <h1 id="drop-name">Loading…</h1>
-      <p id="drop-blurb" class="muted"></p>
+    <!-- the gated action -->
+    <section class="card drop">
+      <div class="art"><span>FP</span></div>
 
-      <div class="stock">
-        <div class="bar"><div id="bar-fill"></div></div>
-        <div class="stock-line">
-          <strong id="remaining">—</strong>
-          <span class="muted">of <span id="total">—</span> left</span>
+      <div>
+        <h1 id="drop-name">Loading…</h1>
+        <p class="lede" id="drop-blurb"></p>
+
+        <div class="stock">
+          <div class="count">
+            <span class="n" id="remaining">—</span>
+            <span class="of">of <span id="total">—</span> remaining</span>
+          </div>
+          <div class="track"><i id="track-fill"></i></div>
+        </div>
+
+        <button id="claim" class="btn">Claim your pass</button>
+        <div id="verdict" class="verdict" hidden>
+          <span class="mark"></span><span class="verdict-text"></span>
         </div>
       </div>
+    </section>
 
-      <button id="claim" class="primary">Claim your pass</button>
+    <!-- on-chain vouch state, shown only when one exists -->
+    <section class="card" id="vouch-card" hidden>
+      <div class="card-head">
+        <h2>Vouch on ENSv2</h2>
+        <span class="tag" id="vouch-latency"></span>
+      </div>
+      <div class="card-body">
+        <div class="vouch-name mono" id="vouch-name"></div>
 
-      <div id="verdict" class="verdict" hidden></div>
-    </div>
-  </section>
+        <div class="rows">
+          <div><span class="k">Scope</span><span class="v" id="v-scope">—</span></div>
+          <div><span class="k">Expires</span><span class="v" id="v-expiry">—</span></div>
+          <div><span class="k">Credential</span><span class="v mono" id="v-cred">—</span></div>
+          <div><span class="k">Accountable human</span><span class="v mono" id="v-human">—</span></div>
+          <div><span class="k">Status</span><span class="v" id="v-status">—</span></div>
+        </div>
 
+        <div class="perm">
+          <h3>Write permission · read live from the resolver</h3>
+          <ul id="perm-rows"></ul>
+        </div>
+
+        <a id="v-explorer" class="link" target="_blank" rel="noopener" style="display:inline-block;margin-top:14px">
+          View this vouch's resolver on Etherscan →
+        </a>
+      </div>
+    </section>
+  </div>
+
+  <!-- the proof: every decision, with its reason -->
   <section class="card log-card">
-    <div class="log-head">
+    <div class="card-head">
       <h2>Gate log</h2>
-      <span class="muted">live · every decision, with its reason</span>
+      <span class="tag live">live</span>
     </div>
-    <ul id="log" class="log"></ul>
+    <ul id="log" class="log"><li class="empty">Waiting for the first request…</li></ul>
   </section>
 </main>
 
-<!-- CAPTCHA modal: the anonymous path -->
 <div id="modal" class="modal" hidden>
-  <div class="modal-card">
-    <h3>Verify you're human</h3>
-    <p class="muted">Type the characters shown.</p>
+  <div class="sheet">
+    <h2>Verify you're human</h2>
+    <p class="lede">Type the characters shown.</p>
     <img id="captcha-img" alt="CAPTCHA challenge" width="300" height="96" />
-    <div class="modal-row">
+    <div class="answer">
       <input id="captcha-input" maxlength="6" autocomplete="off" spellcheck="false"
              placeholder="6 characters" aria-label="CAPTCHA answer" />
-      <button id="captcha-refresh" class="ghost" title="New challenge">↻</button>
+      <button id="captcha-refresh" class="icon-btn" title="New challenge" aria-label="New challenge">↻</button>
     </div>
-    <div id="captcha-error" class="error" hidden></div>
-    <div class="modal-actions">
-      <button id="captcha-cancel" class="ghost">Cancel</button>
-      <button id="captcha-submit" class="primary">Verify &amp; claim</button>
+    <div id="captcha-error" class="err" hidden></div>
+    <div class="sheet-actions">
+      <button id="captcha-cancel" class="btn-ghost">Cancel</button>
+      <button id="captcha-submit" class="btn">Verify &amp; claim</button>
     </div>
   </div>
 </div>

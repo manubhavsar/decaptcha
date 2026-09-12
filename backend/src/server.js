@@ -6,7 +6,8 @@ import { fileURLToPath } from 'node:url';
 
 import { issueChallenge, challengeStats } from './lib/challenge.js';
 import { handleClaim } from './lib/gate.js';
-import { vouchBackendStatus } from './lib/vouch.js';
+import { vouchBackendStatus, resolveVouch, permissionReport } from './lib/vouch.js';
+import { mintVouch, revokeVouch, attemptSelfExtend, vouchWriteStatus } from './lib/ens-write.js';
 import { worldStatus, startSelfieCheck, pollSelfieCheck } from './lib/world.js';
 import QRCode from 'qrcode';
 import {
@@ -121,6 +122,84 @@ app.get('/api/world/selfie-check/:requestId', async (req, res) => {
     res.json(out);
   } catch (e) {
     res.status(500).json({ error: 'world_poll_failed', detail: e.message });
+  }
+});
+
+
+/* ------------------------------- vouches --------------------------------- */
+/* Read endpoints resolve live from ENSv2 on Sepolia. Write endpoints send real
+   transactions. Nothing here is mocked; see lib/ens.js and lib/ens-write.js. */
+
+app.get('/api/vouch/status', (_req, res) => {
+  res.json({ ...vouchBackendStatus(), write: vouchWriteStatus() });
+});
+
+app.get('/api/vouch/:name', async (req, res) => {
+  const vouch = await resolveVouch(req.params.name);
+  // The permission table is the evidence for the accountability beat, so it is
+  // read from chain alongside the record rather than asserted by the server.
+  const permissions = vouch.found ? await permissionReport(vouch).catch(() => null) : null;
+  res.json({ ...vouch, permissions });
+});
+
+app.post('/api/vouch/mint', async (req, res) => {
+  try {
+    const out = await mintVouch({
+      credential: req.body?.credential ?? null,
+      scopeMaxClaims: Math.max(1, Math.min(10, Number(req.body?.scopeMaxClaims) || 1)),
+      ttlHours: Math.max(1, Math.min(168, Number(req.body?.ttlHours) || 24)),
+    });
+    logEvent({
+      outcome: 'info',
+      reason: 'vouch_minted',
+      detail: `${out.vouchName} minted with its own resolver. Scope ${out.scopeMaxClaims}, expires ${out.expiresAt}.`,
+      actor: 'human',
+      vouchName: out.vouchName,
+    });
+    res.json(out);
+  } catch (e) {
+    res.status(500).json({ error: 'mint_failed', detail: e.shortMessage ?? e.message });
+  }
+});
+
+app.post('/api/vouch/revoke', async (req, res) => {
+  try {
+    const vouchName = String(req.body?.vouchName ?? '');
+    const vouch = await resolveVouch(vouchName);
+    if (!vouch.found) return res.status(404).json({ error: 'unknown_vouch' });
+
+    const out = await revokeVouch({ vouchName, resolverAddress: vouch.resolverAddress });
+    logEvent({
+      outcome: 'info',
+      reason: 'vouch_revoked_onchain',
+      detail: `Human revoked ${vouchName} on Sepolia. Next request from this agent will be refused.`,
+      actor: 'human',
+      vouchName,
+      txUrl: out.txUrl,
+    });
+    res.json(out);
+  } catch (e) {
+    res.status(500).json({ error: 'revoke_failed', detail: e.shortMessage ?? e.message });
+  }
+});
+
+app.post('/api/vouch/self-extend', async (req, res) => {
+  try {
+    const vouchName = String(req.body?.vouchName ?? '');
+    const vouch = await resolveVouch(vouchName);
+    if (!vouch.found) return res.status(404).json({ error: 'unknown_vouch' });
+
+    const out = await attemptSelfExtend({ vouchName, resolverAddress: vouch.resolverAddress });
+    logEvent({
+      outcome: out.denied ? 'block' : 'allow',
+      reason: out.denied ? 'self_extend_denied' : 'self_extend_allowed',
+      detail: out.detail,
+      actor: `agent (${vouchName})`,
+      vouchName,
+    });
+    res.json(out);
+  } catch (e) {
+    res.status(500).json({ error: 'self_extend_failed', detail: e.shortMessage ?? e.message });
   }
 });
 
