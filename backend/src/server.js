@@ -1,3 +1,5 @@
+import './lib/env-init.js'; // must be first: loads .env before other modules evaluate
+
 import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

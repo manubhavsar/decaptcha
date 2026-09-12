@@ -125,3 +125,48 @@ Two things the registrar demanded that the docs did not lead with:
   a name that was never registered, which decays the premium to zero. Anyone
   pricing off-chain without reading `_availablePeriod` will get a wild number
   and assume they cannot afford the name.
+
+---
+
+## Steps 4, 5, 6 — agent bypass, scope cap, accountability ✅
+
+All verified live against Sepolia, end to end.
+
+**Agent bypass.** `bots/vouched-agent.js` is the same script as `raw-bot.js`
+with one extra header naming its ENS subname. It is admitted instantly, logged
+as acting for the human's address.
+
+**Scope cap.** A second claim beyond the vouch's scope is refused with
+`scope_exceeded` — blocked exactly like an unvouched bot. The cap is the number
+the human wrote on chain, not a policy in the gate.
+
+**Self-extension denied by the protocol.** The agent's attempt to raise its own
+scope reverts with ENS's own error:
+
+```
+EACUnauthorizedAccountRoles(
+  resource  115602820462972619626511714782884273885628825120769999819800482074525547809874,
+  role      ROLE_SET_TEXT,
+  account   0x58B84C789BdCD74c6D339B5f7745384c0a0D82ee   <- the agent
+)
+```
+
+The refusal names the agent and the exact role it lacks. It comes out of
+Enhanced Access Control, not out of `gate.js`.
+
+**Live revocation.** The human signs `setText(decaptcha.revoked, "1")` with
+their own key. The transaction lands on Sepolia and the agent's very next
+request is refused with `vouch_revoked`. There is no cache to invalidate
+because the gate never had one.
+
+**Permission table, read from chain after minting**
+
+| Account | scope | expiry | revoked |
+| --- | --- | --- | --- |
+| human | can write | can write | can write |
+| agent | no access | no access | no access |
+| issuer (us) | no access | no access | no access |
+
+The issuer renounces its own root roles as the last step of minting. So the
+final state is stronger than "only the human can write": *nobody* but the human
+can, including the people who built this. That is checkable by anyone.
