@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ETHOnline 2026 Founders Pass — Limited Drop</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="dot"></span>
+    <strong>dropzone</strong>
+    <span class="muted">limited drops, one per person</span>
+  </div>
+  <button id="reset" class="ghost" title="Reset inventory and gate log">reset demo</button>
+</header>
+
+<main>
+  <section class="drop card">
+    <div class="drop-art" aria-hidden="true">
+      <div class="drop-art-inner">FP</div>
+    </div>
+
+    <div class="drop-body">
+      <h1 id="drop-name">Loading…</h1>
+      <p id="drop-blurb" class="muted"></p>
+
+      <div class="stock">
+        <div class="bar"><div id="bar-fill"></div></div>
+        <div class="stock-line">
+          <strong id="remaining">—</strong>
+          <span class="muted">of <span id="total">—</span> left</span>
+        </div>
+      </div>
+
+      <button id="claim" class="primary">Claim your pass</button>
+
+      <div id="verdict" class="verdict" hidden></div>
+    </div>
+  </section>
+
+  <section class="card log-card">
+    <div class="log-head">
+      <h2>Gate log</h2>
+      <span class="muted">live · every decision, with its reason</span>
+    </div>
+    <ul id="log" class="log"></ul>
+  </section>
+</main>
+
+<!-- CAPTCHA modal: the anonymous path -->
+<div id="modal" class="modal" hidden>
+  <div class="modal-card">
+    <h3>Verify you're human</h3>
+    <p class="muted">Type the characters shown.</p>
+    <img id="captcha-img" alt="CAPTCHA challenge" width="300" height="96" />
+    <div class="modal-row">
+      <input id="captcha-input" maxlength="6" autocomplete="off" spellcheck="false"
+             placeholder="6 characters" aria-label="CAPTCHA answer" />
+      <button id="captcha-refresh" class="ghost" title="New challenge">↻</button>
+    </div>
+    <div id="captcha-error" class="error" hidden></div>
+    <div class="modal-actions">
+      <button id="captcha-cancel" class="ghost">Cancel</button>
+      <button id="captcha-submit" class="primary">Verify &amp; claim</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
