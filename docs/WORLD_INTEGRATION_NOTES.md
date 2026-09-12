@@ -96,9 +96,18 @@ Recorded as encountered. Neutral where the docs were good.
 - **Friction:** `selfieCheckLegacy` is the only preset still on World ID 3.0
   while the surrounding docs describe 4.0 response shapes. A backend written
   from the 4.0 examples will parse a differently-shaped response.
-- **Gap:** no documented error-code table for `/api/v4/verify/{rp_id}`. The
-  integration page explicitly links out for it and the linked reference does not
-  enumerate codes, so failure handling has to be written defensively.
+- **CORRECTED.** An earlier version of this note claimed the verify endpoint
+  had no documented error codes. That was wrong. `/api-reference/developer-portal/verify`
+  documents request and response shapes and names three codes, and
+  `/world-id/idkit/error-codes` is a complete table of bridge/SDK codes. The
+  real gap is narrower: the verify endpoint's codes are given as *examples*,
+  not an enumeration.
+- **Inconsistency:** `@worldcoin/idkit-core@4.2.4` types `environment` as
+  `"production" | "staging" | "sandbox"`, and the sandbox guide says to use
+  `sandbox` and post to the production verify endpoint. But that endpoint's
+  OpenAPI schema documents `environment` as production/staging only. Since the
+  payload is forwarded byte-for-byte, a sandbox proof carries a value the
+  published schema does not list.
 - **Gap:** no documented way to exercise a Selfie Check *failure* (spoof
   detected, liveness declined) in Sandbox. Only the happy path has a described
   journey, which makes error-state UI hard to test honestly.
