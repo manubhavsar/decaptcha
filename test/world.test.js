@@ -79,3 +79,36 @@ test('an unknown request id fails rather than hanging forever', async () => {
   const out = await pollSelfieCheck('nope');
   assert.equal(out.state, 'failed');
 });
+
+test('the Selfie Check request sets allow_legacy_proofs, without which it cannot run', async () => {
+  // Selfie Check issues World ID 3.0 proofs only. The SDK requires this field
+  // and throws when it is missing, so a regression here would not fail subtly —
+  // it would fail on the first live verification, which is the worst moment to
+  // find out. The docs' own Selfie Check sample omits it.
+  const { readFileSync } = await import('node:fs');
+  const src = readFileSync(new URL('../backend/src/lib/world.js', import.meta.url), 'utf8');
+
+  const call = src.slice(src.indexOf('IDKit.request({'), src.indexOf('.preset(selfieCheckLegacy'));
+  assert.match(call, /allow_legacy_proofs:\s*true/,
+    'selfieCheckLegacy cannot produce a v4 proof, so legacy proofs must be accepted');
+
+  // And confirm the SDK really does reject the omission, so this test is
+  // guarding a live constraint rather than a style preference.
+  const { IDKit, selfieCheckLegacy } = await import('@worldcoin/idkit-core');
+  const { signRequest } = await import('@worldcoin/idkit-core/signing');
+  const crypto = await import('node:crypto');
+  const sig = signRequest({ signingKeyHex: crypto.randomBytes(32).toString('hex'), action: 'a' });
+
+  // The SDK validates synchronously inside IDKit.request(), before the awaited
+  // .preset() call, so this throws rather than rejecting.
+  assert.throws(
+    () => IDKit.request({
+      app_id: 'app_test', action: 'a', environment: 'sandbox',
+      rp_context: {
+        rp_id: 'rp_test', nonce: sig.nonce,
+        created_at: sig.createdAt, expires_at: sig.expiresAt, signature: sig.sig,
+      },
+    }).preset(selfieCheckLegacy({ signal: 's' })),
+    /allow_legacy_proofs is required/,
+  );
+});

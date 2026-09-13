@@ -155,6 +155,13 @@ export async function startSelfieCheck({ signal }) {
     app_id: c.appId,
     action: c.action,
     environment: c.environment,
+    // Required, and it must be true here. Selfie Check only issues World ID 3.0
+    // proofs; `false` means "accept v4 only", which this credential can never
+    // satisfy. Omitting it throws outright — the SDK rejects the request before
+    // it reaches the bridge. Worth pinning down because the docs' Selfie Check
+    // sample omits this field while the proofOfHuman and passport samples set
+    // it, so copying the Selfie Check snippet verbatim does not run.
+    allow_legacy_proofs: true,
     rp_context: {
       rp_id: c.rpId,
       nonce: rpSig.nonce,

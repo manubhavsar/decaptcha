@@ -95,6 +95,31 @@ that value. Either the schema is out of date or sandbox proofs need different
 handling. We could not resolve which without live access, and this is exactly
 the kind of mismatch that produces a confusing failure at the worst moment.
 
+**The Selfie Check code sample omits a required field, so it does not run.**
+This is the most concrete docs bug we found. `@worldcoin/idkit-core@4.2.4`
+declares `allow_legacy_proofs` as **required** on `IDKitConfig`, and validates
+it synchronously inside `IDKit.request()`:
+
+```
+Error: allow_legacy_proofs is required. Set to true to accept v3 proofs
+during migration, or false to only accept v4 proofs.
+```
+
+The `proofOfHuman` and `passport` samples on `/world-id/idkit/credentials` both
+pass `allow_legacy_proofs: true`. **The Selfie Check sample on that same page
+omits it entirely.** Copying it verbatim throws before the request reaches the
+bridge.
+
+Worse, the value is not a free choice. Selfie Check issues World ID 3.0 proofs
+only, so `false` — "accept v4 only" — is a configuration the credential can
+never satisfy. It must be `true`, and nothing on the page says so.
+
+We had copied the documented snippet and would have discovered this on our
+first live verification, which is the worst possible moment. Adding
+`allow_legacy_proofs: true` to that one sample would prevent it, and a sentence
+explaining why it cannot be `false` for this credential would prevent the next
+person reasoning their way to the wrong value.
+
 ### Correcting our own earlier note
 
 An earlier draft of these notes claimed the verify endpoint had no documented
@@ -235,11 +260,14 @@ around it conservatively instead of verifying it.
    validate an integration whose job is refusing things.
 3. **Resolve the `environment` enum mismatch** between the IDKit types, the
    sandbox guidance, and the verify endpoint's published schema.
-4. **State the `selfieCheckLegacy` (World ID 3.0) response shape** on the
+4. **Add `allow_legacy_proofs: true` to the Selfie Check code sample.** It is
+   required, the sample omits it, and the credential cannot work with `false`.
+   The one-line fix with the highest hit rate on this list.
+5. **State the `selfieCheckLegacy` (World ID 3.0) response shape** on the
    credential page, since the surrounding docs show 4.0.
-5. **Slug aliases for credential pages.** `/world-id/credentials/11` is not
+6. **Slug aliases for credential pages.** `/world-id/credentials/11` is not
    guessable.
-6. **Document offline RP signing as a supported testing workflow.** It let us
+7. **Document offline RP signing as a supported testing workflow.** It let us
    build the whole signing path before we had credentials, and we found it by
    accident.
 
