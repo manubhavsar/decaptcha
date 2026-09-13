@@ -58,6 +58,10 @@ widgetRouter.post('/widget/probe', async (req, res) => {
     return deny('vouch_unknown',
       `${vouchName} does not resolve to a vouch. Treated as an anonymous bot.`);
   }
+  if (!vouch.authorised) {
+    return deny('vouch_unauthorised',
+      `${vouchName} carries no valid authorisation signature from the human named on it.`);
+  }
   if (vouch.revoked) {
     return deny('vouch_revoked', `${vouchName} was revoked by ${vouch.humanLabel}.`);
   }

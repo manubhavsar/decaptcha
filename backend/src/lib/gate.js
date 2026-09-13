@@ -61,6 +61,15 @@ export async function evaluateClaim(req) {
         { vouchName: req.vouchName },
       );
     }
+    // A vouch whose signature does not recover to the human named on it proves
+    // nothing, whatever else it says. Refuse before reading any of its terms.
+    if (!vouch.authorised) {
+      return block(
+        'vouch_unauthorised',
+        `${req.vouchName} carries no valid authorisation from ${vouch.humanLabel} (${vouch.authorisation?.reason ?? 'unverified'}).`,
+        { vouchName: req.vouchName, vouch },
+      );
+    }
     if (vouch.revoked) {
       return block(
         'vouch_revoked',

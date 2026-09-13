@@ -24,6 +24,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { ENS_V2_SEPOLIA, VOUCH_KEYS, explorer } from './ens-config.js';
 import { actors } from './actors.js';
 import { dnsEncode } from './ens.js';
+import { authorisationTerms } from './authorisation.js';
 
 const abi = (n) => JSON.parse(readFileSync(new URL(`../abi/${n}.json`, import.meta.url), 'utf8'));
 const RESOLVER_ABI = abi('PermissionedResolverImpl');
@@ -100,7 +101,7 @@ export function vouchWriteStatus() {
  * target this resolver, so one multicall covers them. Within that batch the
  * renunciation must come last, since granting needs the roles being given up.
  */
-export async function mintVouch({ credential, scopeMaxClaims = 1, ttlHours = 24, onStep = () => {} }) {
+export async function mintVouch({ scopeMaxClaims = 1, ttlHours = 24, onStep = () => {} }) {
   const d = deployment();
   const { pub, wallet, actors: a } = clients('deployer');
 
@@ -111,11 +112,26 @@ export async function mintVouch({ credential, scopeMaxClaims = 1, ttlHours = 24,
 
   const expirySeconds = Math.floor(Date.now() / 1000) + ttlHours * 3600;
 
+  // The human signs the terms before anything is written, and the signature
+  // goes on the record. That is what makes the vouch self-verifying: a reader
+  // can recover the signer from chain data alone and confirm this human really
+  // did consent to this agent, this scope and this expiry.
+  const terms = authorisationTerms({
+    vouchName: fullName,
+    agentAddress: a.agent.account.address,
+    scopeMaxClaims,
+    expiresAt: expirySeconds,
+  });
+  const humanWallet = createWalletClient({
+    account: a.human.account, chain: sepolia, transport: http(process.env.SEPOLIA_RPC_URL),
+  });
+  const authSignature = await humanWallet.signMessage({ message: terms });
+
   const records = {
     [VOUCH_KEYS.scope]: String(scopeMaxClaims),
     [VOUCH_KEYS.expiry]: String(expirySeconds),
     [VOUCH_KEYS.revoked]: '0',
-    [VOUCH_KEYS.credential]: credential?.credentialRef ?? '',
+    [VOUCH_KEYS.auth]: authSignature,
     [VOUCH_KEYS.human]: a.human.account.address,
     [VOUCH_KEYS.agent]: a.agent.account.address,
   };
@@ -196,6 +212,7 @@ export async function mintVouch({ credential, scopeMaxClaims = 1, ttlHours = 24,
     humanAddress: a.human.account.address,
     agentAddress: a.agent.account.address,
     scopeMaxClaims,
+    authSignature,
     expiresAt: new Date(expirySeconds * 1000).toISOString(),
     nameExpiresAt: new Date(Number(registryExpiry) * 1000).toISOString(),
     txs: { deployResolver: h1, registerSubname: h2, grantAndRenounce: h3 },

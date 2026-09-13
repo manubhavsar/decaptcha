@@ -16,7 +16,6 @@ const GATE = 'http://localhost:8787';
 const DEFAULT_STATE = {
   vouchName: null,
   agentAddress: null,
-  credential: null,   // the Selfie Check reference, from the backend
   lastVouch: null,    // last on-chain read, for display only — never trusted
   lastCheckedAt: null,
 };
@@ -68,29 +67,11 @@ const handlers = {
     return getState();
   },
 
-  async startSelfieCheck({ signal }) {
-    const { status, body } = await api('/api/world/selfie-check/start', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ signal }),
-    });
-    return { status, ...body };
-  },
-
-  async pollSelfieCheck({ requestId }) {
-    const { body } = await api(`/api/world/selfie-check/${encodeURIComponent(requestId)}`);
-    if (body.state === 'verified') await setState({ credential: body.credential });
-    return body;
-  },
-
   async mintVouch({ scopeMaxClaims, ttlHours }) {
-    const { credential } = await getState();
-    if (!credential) return { error: 'No Selfie Check credential yet.' };
-
     const { status, body } = await api('/api/vouch/mint', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ credential, scopeMaxClaims, ttlHours }),
+      body: JSON.stringify({ scopeMaxClaims, ttlHours }),
     });
     if (status === 200 && body.vouchName) {
       await setState({ vouchName: body.vouchName, agentAddress: body.agentAddress });

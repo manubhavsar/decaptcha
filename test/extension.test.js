@@ -81,7 +81,7 @@ test('getState returns the full default shape before anything is stored', async 
   store = {};
   const s = await send('getState');
   assert.deepEqual(Object.keys(s).sort(),
-    ['agentAddress', 'credential', 'lastCheckedAt', 'lastVouch', 'vouchName']);
+    ['agentAddress', 'lastCheckedAt', 'lastVouch', 'vouchName']);
   assert.equal(s.vouchName, null);
 });
 
@@ -97,6 +97,7 @@ test('refresh reads the vouch live and persists it', { skip }, async () => {
   assert.equal(v.found, true, 'the minted vouch should resolve on Sepolia');
   assert.equal(v.name, fixture.vouchName);
   assert.equal(v.cached, false, 'the gate must never serve a cached vouch');
+  assert.equal(v.authorised, true, "the human's signature must recover to the address on the record");
   assert.ok(v.scopeMaxClaims >= 1);
 
   const s = await send('getState');
@@ -135,14 +136,13 @@ test('actions that need a vouch fail cleanly when none is held', { skip: !gateUp
   store = {};
   assert.match((await send('revoke')).error, /Nothing to revoke/);
   assert.match((await send('attemptSelfExtend')).error, /No vouch held/);
-  assert.match((await send('mintVouch', { scopeMaxClaims: 1 })).error, /No Selfie Check credential/);
 });
 
-test('forget clears the credential completely', async () => {
-  store = { state: { vouchName: 'x.eth', credential: { credentialRef: 'sc11:abc' } } };
+test('forget clears the held vouch completely', async () => {
+  store = { state: { vouchName: 'x.eth', agentAddress: '0xabc' } };
   const s = await send('forget');
   assert.equal(s.vouchName, null);
-  assert.equal(s.credential, null);
+  assert.equal(s.agentAddress, null);
   assert.equal((await send('getState')).vouchName, null);
 });
 

@@ -15,7 +15,7 @@ const send = (type, payload = {}) =>
     return r.result;
   });
 
-const VIEWS = ['view-start', 'view-check', 'view-mint', 'view-vouch'];
+const VIEWS = ['view-mint', 'view-vouch'];
 function show(id) { VIEWS.forEach((v) => { $(v).hidden = v !== id; }); }
 
 function notice(el, text, kind = '') {
@@ -36,64 +36,20 @@ async function loadChainChip() {
   }
 }
 
-async function loadWorldStatus() {
+async function loadGateStatus() {
   try {
-    const s = await fetch('http://localhost:8787/api/world/status').then((x) => x.json());
-    if (s.devBypass) {
-      notice($('world-unavailable'),
-        'Dev bypass is on. Selfie Checks will be SIMULATED and marked as such. Turn off WORLD_DEV_BYPASS for the real demo.', 'warn');
-    } else if (!s.configured) {
-      notice($('world-unavailable'),
-        `World ID not configured yet: missing ${s.missing.join(', ')}. Selfie Check needs the Beta feature flag AND sandbox tester access — two separate approvals.`, 'bad');
-      $('begin').disabled = true;
+    const s = await fetch('http://localhost:8787/api/vouch/status').then((x) => x.json());
+    if (!s.wired) {
+      notice($('gate-status'), 'No Sepolia RPC configured, so nothing can be minted or resolved.', 'bad');
+      $('mint').disabled = true;
+    } else if (!s.write?.ready) {
+      notice($('gate-status'), s.write?.error ?? 'The parent name is not registered yet.', 'bad');
+      $('mint').disabled = true;
     }
-  } catch { /* the gate being down is already reported in the chip */ }
-}
-
-/* ----------------------------- selfie check ------------------------------ */
-
-let polling = null;
-
-async function beginCheck() {
-  show('view-check');
-  $('sim-note').hidden = true;
-  $('check-status').textContent = 'Starting…';
-
-  let started;
-  try {
-    started = await send('startSelfieCheck', { signal: `vouch-${Date.now()}` });
-  } catch (e) {
-    show('view-start');
-    return notice($('world-unavailable'), e.message, 'bad');
+  } catch {
+    notice($('gate-status'), 'The gate is not reachable on localhost:8787.', 'bad');
+    $('mint').disabled = true;
   }
-
-  if (started.error === 'world_not_configured') {
-    show('view-start');
-    return notice($('world-unavailable'),
-      `World ID not configured: missing ${(started.missing ?? []).join(', ')}.`, 'bad');
-  }
-
-  if (started.simulated) {
-    $('qr').removeAttribute('src');
-    notice($('sim-note'), started.warning, 'warn');
-  } else {
-    $('qr').src = started.qrDataUrl;
-  }
-  $('check-status').textContent = 'Waiting for your phone…';
-
-  clearInterval(polling);
-  polling = setInterval(async () => {
-    const out = await send('pollSelfieCheck', { requestId: started.requestId });
-    if (out.state === 'pending') return;
-    clearInterval(polling);
-
-    if (out.state === 'verified') {
-      show('view-mint');
-      return;
-    }
-    show('view-start');
-    notice($('world-unavailable'), out.error ?? 'Selfie Check failed.', 'bad');
-  }, 1500);
 }
 
 /* -------------------------------- minting -------------------------------- */
@@ -147,7 +103,7 @@ function fact(id, text, kind = '') {
 
 async function renderVouch() {
   const state = await send('getState');
-  if (!state.vouchName) return show('view-start');
+  if (!state.vouchName) return show('view-mint');
 
   show('view-vouch');
   $('vouch-name').textContent = state.vouchName;
@@ -162,7 +118,8 @@ async function renderVouch() {
   fact('f-scope', `${v.scopeMaxClaims} claim${v.scopeMaxClaims === 1 ? '' : 's'}`);
   fact('f-expiry', v.expiresAt ? new Date(v.expiresAt).toLocaleString() : '—',
     v.expired ? 'bad' : '');
-  fact('f-cred', v.credentialRef ?? '—');
+  fact('f-auth', v.authorised ? 'signature verified' : (v.authorisation?.reason ?? 'unverified'),
+    v.authorised ? 'ok' : 'bad');
 
   if (v.revoked) fact('f-status', 'revoked', 'bad');
   else if (v.expired) fact('f-status', 'expired', 'bad');
@@ -232,20 +189,17 @@ async function selfExtend() {
 
 /* -------------------------------- wiring --------------------------------- */
 
-$('begin').onclick = beginCheck;
-$('cancel-check').onclick = () => { clearInterval(polling); show('view-start'); };
 $('mint').onclick = mint;
 $('revoke').onclick = revoke;
 $('self-extend').onclick = selfExtend;
-$('forget').onclick = async () => { await send('forget'); show('view-start'); };
+$('forget').onclick = async () => { await send('forget'); show('view-mint'); };
 
 chrome.runtime.onMessage.addListener((m) => { if (m?.type === 'state') renderVouch(); });
 
 (async () => {
   loadChainChip();
-  await loadWorldStatus();
+  await loadGateStatus();
   const state = await send('getState');
   if (state.vouchName) renderVouch();
-  else if (state.credential) show('view-mint');
-  else show('view-start');
+  else show('view-mint');
 })();

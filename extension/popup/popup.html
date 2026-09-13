@@ -12,42 +12,26 @@
   <span id="chain" class="chip">…</span>
 </header>
 
-<!-- 1. No credential yet -->
-<section id="view-start" class="view">
-  <h1>Vouch for your agent</h1>
+<!-- 1. Authorise an agent -->
+<section id="view-mint" class="view">
+  <h1>Authorise an agent</h1>
   <p class="muted">
-    One quick liveness check, and your agent gets accountable access to gated
-    actions — capped, expiring, and revocable by you at any moment.
+    You sign these terms. The signature goes on chain with the vouch, so anyone
+    can check you really agreed to them.
   </p>
-  <div id="world-unavailable" class="notice" hidden></div>
-  <button id="begin" class="primary">Start Selfie Check</button>
-</section>
 
-<!-- 2. Selfie Check in flight -->
-<section id="view-check" class="view" hidden>
-  <h1>Scan with World App</h1>
-  <p class="muted">Complete the Selfie Check on your phone.</p>
-  <img id="qr" alt="Scan to complete Selfie Check in World App" />
-  <div id="sim-note" class="notice warn" hidden></div>
-  <div class="status"><span class="spinner"></span><span id="check-status">Waiting for your phone…</span></div>
-  <button id="cancel-check" class="ghost">Cancel</button>
-</section>
-
-<!-- 3. Verified, choose the scope -->
-<section id="view-mint" class="view" hidden>
-  <h1>Set what your agent may do</h1>
-  <p class="muted">This is written on chain and is the ceiling on its access.</p>
+  <div id="gate-status" class="notice" hidden></div>
 
   <label class="field">
-    <span>Claims allowed</span>
-    <input id="scope" type="number" min="1" max="10" value="1" />
+    <span>Verifications allowed</span>
+    <input id="scope" type="number" min="1" max="10" value="2" />
   </label>
   <label class="field">
     <span>Expires in (hours)</span>
     <input id="ttl" type="number" min="1" max="168" value="24" />
   </label>
 
-  <button id="mint" class="primary">Mint vouch on Sepolia</button>
+  <button id="mint" class="primary">Sign &amp; mint on Sepolia</button>
   <div id="mint-status" class="notice" hidden></div>
 </section>
 
@@ -59,7 +43,7 @@
   <dl class="facts">
     <div><dt>Scope</dt><dd id="f-scope">—</dd></div>
     <div><dt>Expires</dt><dd id="f-expiry">—</dd></div>
-    <div><dt>Credential</dt><dd id="f-cred">—</dd></div>
+    <div><dt>Authorisation</dt><dd id="f-auth">—</dd></div>
     <div><dt>Status</dt><dd id="f-status">—</dd></div>
   </dl>
 

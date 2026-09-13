@@ -36,7 +36,6 @@ console.log(`  ${C.green('✓')} inventory back to 50, gate log cleared`);
 // Scope 2 is the right number for a recording: one claim lands, the second
 // lands, the third gets capped. Scope 1 makes the cap look like an off-by-one.
 const out = await mintVouch({
-  credential: { credentialRef: `sc11:stage-${Date.now().toString(36)}` },
   scopeMaxClaims: 2,
   ttlHours: 24,
   onStep: ({ step, of, detail }) => console.log(`  ${C.dim(`[${step}/${of}]`)} ${detail}`),

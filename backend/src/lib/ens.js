@@ -21,6 +21,7 @@ import { namehash, packetToBytes } from 'viem/ens';
 import { readFileSync } from 'node:fs';
 
 import { ENS_V2_SEPOLIA, VOUCH_KEYS, CHAIN_ID, explorer } from './ens-config.js';
+import { authorisationTerms, verifyAuthorisation } from './authorisation.js';
 
 const abi = (n) =>
   JSON.parse(readFileSync(new URL(`../abi/${n}.json`, import.meta.url), 'utf8'));
@@ -151,6 +152,20 @@ export async function readVouch(name) {
   const human = rec[VOUCH_KEYS.human];
   const agent = rec[VOUCH_KEYS.agent];
 
+  // Verify the human's authorisation from chain data alone. Nothing here trusts
+  // the server that minted the vouch — the signature either recovers to the
+  // address on the record or it does not.
+  const authorisation = await verifyAuthorisation({
+    terms: authorisationTerms({
+      vouchName: name,
+      agentAddress: agent,
+      scopeMaxClaims,
+      expiresAt: expirySeconds,
+    }),
+    signature: rec[VOUCH_KEYS.auth] || null,
+    expectedSigner: isAddress(human) ? human : null,
+  });
+
   return {
     found: true,
     name,
@@ -162,7 +177,8 @@ export async function readVouch(name) {
     expiresAt: expirySeconds ? new Date(expirySeconds * 1000).toISOString() : null,
     expired: Boolean(expirySeconds) && expirySeconds <= nowSeconds,
     revoked,
-    credentialRef: rec[VOUCH_KEYS.credential] || null,
+    authorised: authorisation.valid,
+    authorisation,
     humanAddress: isAddress(human) ? human : null,
     humanLabel: isAddress(human) ? `${human.slice(0, 6)}…${human.slice(-4)}` : 'a verified human',
     agentAddress: isAddress(agent) ? agent : null,

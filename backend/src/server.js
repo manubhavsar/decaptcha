@@ -8,8 +8,6 @@ import { issueChallenge, challengeStats } from './lib/challenge.js';
 import { handleClaim } from './lib/gate.js';
 import { vouchBackendStatus, resolveVouch, permissionReport } from './lib/vouch.js';
 import { mintVouch, revokeVouch, attemptSelfExtend, vouchWriteStatus } from './lib/ens-write.js';
-import { worldStatus, startSelfieCheck, pollSelfieCheck } from './lib/world.js';
-import QRCode from 'qrcode';
 import { widgetRouter } from './routes/widget.js';
 import {
   DROP, remaining, claimCount, allClaims,
@@ -78,58 +76,6 @@ app.post('/api/claim', async (req, res) => {
 });
 
 
-/* ------------------------- World ID — Selfie Check ------------------------ */
-/* Used as an abuse-prevention signal, which is what World documents Selfie
-   Check for. See lib/world.js for why a medium-assurance credential is the
-   right assurance level for this gate rather than a compromise. */
-
-app.get('/api/world/status', (_req, res) => {
-  res.json(worldStatus());
-});
-
-app.post('/api/world/selfie-check/start', async (req, res) => {
-  try {
-    const signal = String(req.body?.signal ?? '').slice(0, 96) || `anon-${Date.now()}`;
-    const out = await startSelfieCheck({ signal });
-
-    // The QR is rendered here rather than in the extension so the popup needs
-    // no bundled library and stays within the default MV3 content-security
-    // policy. Desktop users scan it; the connector URI is also returned for
-    // same-device deep linking.
-    if (out.connectorURI) {
-      out.qrDataUrl = await QRCode.toDataURL(out.connectorURI, {
-        margin: 1, width: 320, color: { dark: '#0b0d12', light: '#ffffff' },
-      });
-    }
-    res.json(out);
-  } catch (e) {
-    if (e.name === 'WorldNotReady') {
-      return res.status(503).json({ error: 'world_not_configured', ...e.status });
-    }
-    res.status(500).json({ error: 'world_request_failed', detail: e.message });
-  }
-});
-
-app.get('/api/world/selfie-check/:requestId', async (req, res) => {
-  try {
-    const out = await pollSelfieCheck(req.params.requestId);
-    if (out.state === 'verified') {
-      logEvent({
-        outcome: 'info',
-        reason: 'selfie_check_verified',
-        detail: out.credential.simulated
-          ? 'SIMULATED Selfie Check passed (build aid, not a real World credential).'
-          : `Selfie Check passed. Human accountable, credential ${out.credential.credentialRef}.`,
-        actor: 'human',
-      });
-    }
-    res.json(out);
-  } catch (e) {
-    res.status(500).json({ error: 'world_poll_failed', detail: e.message });
-  }
-});
-
-
 /* ------------------------------- vouches --------------------------------- */
 /* Read endpoints resolve live from ENSv2 on Sepolia. Write endpoints send real
    transactions. Nothing here is mocked; see lib/ens.js and lib/ens-write.js. */
@@ -149,7 +95,6 @@ app.get('/api/vouch/:name', async (req, res) => {
 app.post('/api/vouch/mint', async (req, res) => {
   try {
     const out = await mintVouch({
-      credential: req.body?.credential ?? null,
       scopeMaxClaims: Math.max(1, Math.min(10, Number(req.body?.scopeMaxClaims) || 1)),
       ttlHours: Math.max(1, Math.min(168, Number(req.body?.ttlHours) || 24)),
       // Minting takes about 45s across three Sepolia transactions. Pushing each

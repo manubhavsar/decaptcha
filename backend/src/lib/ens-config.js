@@ -61,7 +61,7 @@ export const VOUCH_KEYS = {
   scope: 'decaptcha.scope',        // max claims the human authorised
   expiry: 'decaptcha.expiry',      // unix seconds
   revoked: 'decaptcha.revoked',    // "1" once the human pulls it
-  credential: 'decaptcha.credential', // sc11: digest of the World nullifier
+  auth: 'decaptcha.auth',          // the human's signature over the vouch terms
   human: 'decaptcha.human',        // the accountable human's address
   agent: 'decaptcha.agent',        // the agent address this vouch is bound to
 };

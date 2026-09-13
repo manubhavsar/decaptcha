@@ -62,14 +62,9 @@ async function main() {
 
   await fundHuman();
 
-  const credential = {
-    credentialRef: `sc11:pending-${Date.now().toString(36)}`,
-    simulated: true,
-  };
-  console.log(C.dim(`  credential ref: ${credential.credentialRef} (placeholder until World access lands)\n`));
 
   const out = await mintVouch({
-    credential, scopeMaxClaims: scope, ttlHours: hours,
+    scopeMaxClaims: scope, ttlHours: hours,
     onStep: ({ step, of, detail }) => console.log(`  ${C.bold(`[${step}/${of}]`)} ${detail}`),
   });
 
@@ -83,7 +78,7 @@ async function main() {
   const v = await readVouch(out.vouchName);
   console.log(`  found=${v.found} scope=${v.scopeMaxClaims} revoked=${v.revoked} expired=${v.expired}`);
   console.log(`  expires ${v.expiresAt}`);
-  console.log(`  credential ${v.credentialRef}`);
+  console.log(`  authorised  ${v.authorised} ${v.authorised ? '(signature recovers to the human on the record)' : '(' + (v.authorisation?.reason ?? '?') + ')'}`);
   console.log(C.dim(`  read in ${v.latencyMs}ms, no cache\n`));
 
   const path = new URL('../.decaptcha-vouch.json', import.meta.url).pathname;
