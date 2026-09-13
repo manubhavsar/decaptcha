@@ -2,6 +2,14 @@
 
 Running record of what actually works, checkpoint by checkpoint.
 
+> **Note on World ID.** Early entries below describe a World Selfie Check
+> integration. Access to Selfie Check (Beta) requires two separate approvals
+> that never arrived during the event, so that integration was removed rather
+> than left as dead weight. The human's authorisation is now a signature they
+> make themselves, published on the vouch and verifiable from chain data alone —
+> see `docs/ENS_ARCHITECTURE.md`. These entries are kept as an honest record of
+> the route taken, not a description of the current build.
+
 ---
 
 ## Step 1 — Gated action with plain CAPTCHA blocking (no blockchain) ✅

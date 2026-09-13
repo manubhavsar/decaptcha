@@ -2,7 +2,7 @@
  * The three accounts the demo needs, and why they must be three.
  *
  *   deployer — owns decaptcha.eth, mints vouches, pays gas
- *   human    — the person who passed Selfie Check and vouches for the agent
+ *   human    — the person who signs the authorisation and vouches for the agent
  *   agent    — the AI agent holding the credential
  *
  * If the human and the agent shared an address, the two accountability beats

@@ -38,13 +38,15 @@ and revoking one cannot touch another.
 | `decaptcha.scope` | how many claims the human authorised |
 | `decaptcha.expiry` | unix seconds |
 | `decaptcha.revoked` | `"1"` once the human pulls it |
-| `decaptcha.credential` | digest of the World Selfie Check credential |
+| `decaptcha.auth` | the human's signature over the vouch terms |
 | `decaptcha.human` | the accountable human's address |
 | `decaptcha.agent` | the agent address this vouch is bound to |
 
-`decaptcha.credential` is a one-way digest, never the raw World nullifier. The
-subname is public on Sepolia, and publishing a raw nullifier there would let
-anyone link every action that human's agents ever take.
+`decaptcha.auth` is what makes the vouch self-verifying. The human signs a
+readable statement naming the agent, the scope and the expiry; anyone can read
+the record off Sepolia, recover the signer, and confirm the human named on the
+record really did consent to those exact terms. Change any term and the
+signature stops matching. No server is trusted, including ours.
 
 ## Why the agent provably cannot write to its own credential
 
