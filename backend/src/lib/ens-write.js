@@ -45,6 +45,9 @@ function roleLabel(bitmap) {
   return known[bitmap] ?? `role bitmap ${bitmap}`;
 }
 
+/** How long the subname outlives the vouch it carries. See step 2 of mintVouch. */
+const EXPIRY_GRACE_SECONDS = 7n * 24n * 3600n;
+
 /** Keys the human keeps write access to after the issuer steps back. */
 const HUMAN_WRITABLE = [VOUCH_KEYS.revoked, VOUCH_KEYS.scope, VOUCH_KEYS.expiry];
 
@@ -143,10 +146,23 @@ export async function mintVouch({ credential, scopeMaxClaims = 1, ttlHours = 24,
   /* 2. the subname itself, owned by the human, pointed at that resolver */
   onStep({ step: 2, of: 3, detail: `Registering ${fullName}`, resolverAddress });
 
+  // The subname's REGISTRY expiry deliberately outlives the vouch's own expiry.
+  //
+  // Setting them equal looks tidy and is wrong. When the registry expiry lands
+  // the name stops resolving at all, so the gate sees "no resolver" and reports
+  // an unknown vouch — indistinguishable from a name that never existed. The
+  // agent is correctly blocked either way, but nobody can tell *why*, and the
+  // vouch_expired branch never runs.
+  //
+  // With a grace period the two layers stack properly: the vouch expires first
+  // and the gate can still read the record and say so, then the name itself
+  // lapses later as a backstop.
+  const registryExpiry = BigInt(expirySeconds) + EXPIRY_GRACE_SECONDS;
+
   const h2 = await wallet.writeContract({
     address: d.parentRegistry, abi: REGISTRY_ABI, functionName: 'register',
     args: [label, a.human.account.address, zeroAddress, resolverAddress,
-           ALL_ROLES, BigInt(expirySeconds)],
+           ALL_ROLES, registryExpiry],
   });
   await pub.waitForTransactionReceipt({ hash: h2 });
 
@@ -181,6 +197,7 @@ export async function mintVouch({ credential, scopeMaxClaims = 1, ttlHours = 24,
     agentAddress: a.agent.account.address,
     scopeMaxClaims,
     expiresAt: new Date(expirySeconds * 1000).toISOString(),
+    nameExpiresAt: new Date(Number(registryExpiry) * 1000).toISOString(),
     txs: { deployResolver: h1, registerSubname: h2, grantAndRenounce: h3 },
   };
 }

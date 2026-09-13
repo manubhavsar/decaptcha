@@ -225,3 +225,28 @@ access and the Portal critique needs the account holder's own experience.
 **Only World.** The integration is written and unit-tested and needs three
 environment variables plus the feature flag. Everything downstream of it —
 minting, scope, expiry, revocation, the denial — is built and proven live.
+
+---
+
+## Expiry — tested, and it exposed a layering bug ✅
+
+`vouch_expired` had never actually run. Testing it with a short-lived vouch
+showed why: the subname's **registry** expiry was set to the same timestamp as
+the vouch's own `decaptcha.expiry` record. When that moment arrived the name
+stopped resolving entirely, so the gate saw no resolver and reported
+`vouch_unknown` — indistinguishable from a name that never existed.
+
+The agent was correctly blocked either way, so the security property held. But
+nobody could tell *why*, and the clearer branch was dead code.
+
+**Fix:** the subname now outlives its vouch by a week. The two layers stack
+properly.
+
+| t | state | gate |
+| --- | --- | --- |
+| before expiry | resolves, not expired | `allow` |
+| after vouch expiry | resolves, `expired: true` | `vouch_expired`, named |
+| after name expiry (+7d) | no resolver | `vouch_unknown`, backstop |
+
+Verified live: a vouch with a 130-second lifetime was admitted, then refused
+with `vouch_expired` naming the timestamp.
