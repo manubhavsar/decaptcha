@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Northwind Tickets — On sale now</title>
+<style>
+  /* An ordinary site. Light theme, generic type, nothing shared with the
+     deCAPTCHA demo. The point is that the widget drops in unchanged. */
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:#F6F7F9;color:#16181D;
+    font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  }
+  header{background:#fff;border-bottom:1px solid #E4E7EC;padding:16px 28px;
+    display:flex;align-items:center;justify-content:space-between}
+  .logo{font-weight:700;letter-spacing:-.02em;font-size:17px}
+  .logo span{color:#0B7C58}
+  nav{color:#6B7280;font-size:14px;display:flex;gap:20px}
+  main{max-width:660px;margin:0 auto;padding:44px 24px 80px}
+  .card{background:#fff;border:1px solid #E4E7EC;border-radius:14px;padding:32px;
+    box-shadow:0 1px 2px rgba(16,24,40,.04)}
+  h1{margin:0 0 6px;font-size:26px;letter-spacing:-.02em}
+  .sub{color:#6B7280;margin:0 0 26px}
+  .row{display:flex;gap:14px;align-items:center;padding:14px 0;border-top:1px solid #F0F2F5}
+  .row:first-of-type{border-top:0}
+  .row .n{font-weight:600}
+  .row .p{margin-left:auto;font-variant-numeric:tabular-nums;font-weight:600}
+  label{display:block;font-size:13px;font-weight:600;color:#374151;margin:22px 0 6px}
+  input[type=email]{width:100%;padding:11px 13px;border:1px solid #D5D9E0;border-radius:9px;
+    font:inherit;background:#fff}
+  input[type=email]:focus{outline:0;border-color:#0B7C58;box-shadow:0 0 0 3px rgba(11,124,88,.12)}
+  .gate{margin:22px 0}
+  button.buy{width:100%;padding:13px;border:0;border-radius:10px;background:#0B7C58;color:#fff;
+    font:600 16px/1 inherit;cursor:pointer}
+  button.buy:disabled{background:#C3CAD3;cursor:not-allowed}
+  button.buy:hover:not(:disabled){background:#0A6B4C}
+  .result{margin-top:20px;padding:14px 16px;border-radius:10px;font-size:14.5px;display:none}
+  .result.ok{display:block;background:#ECFDF5;border:1px solid #A7F3D0;color:#065F46}
+  .result.no{display:block;background:#FEF2F2;border:1px solid #FECACA;color:#991B1B}
+  .result code{font-family:ui-monospace,Menlo,monospace;font-size:12.5px}
+  footer{max-width:660px;margin:0 auto;padding:0 24px 60px;color:#98A2B3;font-size:13px}
+  footer code{background:#EDEFF3;padding:2px 6px;border-radius:5px;font-size:12px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">northwind<span>.</span></div>
+  <nav><span>Events</span><span>Venues</span><span>Help</span></nav>
+</header>
+
+<main>
+  <div class="card">
+    <h1>Aurora Festival 2026</h1>
+    <p class="sub">Saturday 14 November · Pier 48 · Doors 18:00</p>
+
+    <div class="row"><span class="n">General admission</span><span class="p">£45.00</span></div>
+    <div class="row"><span class="n">Booking fee</span><span class="p">£3.50</span></div>
+    <div class="row"><span class="n">Total</span><span class="p">£48.50</span></div>
+
+    <label for="email">Email for your ticket</label>
+    <input id="email" type="email" value="you@example.com" />
+
+    <!-- This is the entire integration. -->
+    <div class="gate">
+      <div class="decaptcha" data-sitekey="dcap_demo_site" data-callback="onVerified"></div>
+    </div>
+
+    <button class="buy" id="buy" disabled>Complete purchase</button>
+    <div class="result" id="result"></div>
+  </div>
+</main>
+
+<footer>
+  Northwind is a fictional site. It integrates deCAPTCHA with one script tag and one
+  <code>&lt;div class="decaptcha"&gt;</code>, then verifies the token server-side at
+  <code>/api/siteverify</code> — the same shape as reCAPTCHA.
+</footer>
+
+<script src="/decaptcha.js" async defer></script>
+<script>
+  // Everything below is what a normal site author writes. Nothing here knows
+  // what a vouch is; the site just learns whether a human or an accountable
+  // agent passed, and who is on the hook if it was an agent.
+  let token = null;
+
+  function onVerified(t) {
+    token = t;
+    document.getElementById('buy').disabled = false;
+  }
+
+  document.getElementById('buy').onclick = async () => {
+    const r = await fetch('/api/siteverify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ secret: 'dcap_secret_demo_do_not_ship', response: token }),
+    }).then((x) => x.json());
+
+    const el = document.getElementById('result');
+    if (!r.success) {
+      el.className = 'result no';
+      el.textContent = 'Verification failed: ' + (r['error-codes'] || []).join(', ');
+      return;
+    }
+    el.className = 'result ok';
+    el.innerHTML = r.kind === 'agent'
+      ? `Ticket reserved. Purchased by an <strong>authorised agent</strong> acting for
+         <code>${r.acting_for}</code>, under a vouch permitting ${r.scope.max}
+         verification${r.scope.max === 1 ? '' : 's'} (${r.scope.used} used).`
+      : `Ticket reserved for a verified human.`;
+    document.getElementById('buy').disabled = true;
+  };
+</script>
+</body>
+</html>

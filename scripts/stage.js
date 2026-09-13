@@ -42,6 +42,11 @@ const out = await mintVouch({
   onStep: ({ step, of, detail }) => console.log(`  ${C.dim(`[${step}/${of}]`)} ${detail}`),
 });
 
+// The bots and the widget demo both read this file to find the current vouch.
+const { writeFileSync } = await import('node:fs');
+writeFileSync(new URL('../.decaptcha-vouch.json', import.meta.url).pathname,
+  JSON.stringify(out, null, 2) + '\n');
+
 // Minting logs to the same stream the demo page renders, so clear it again —
 // the recording should open on an empty log, not on setup noise.
 await fetch(`${BASE}/api/demo/reset`, { method: 'POST' });

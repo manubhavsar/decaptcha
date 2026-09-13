@@ -10,6 +10,7 @@ import { vouchBackendStatus, resolveVouch, permissionReport } from './lib/vouch.
 import { mintVouch, revokeVouch, attemptSelfExtend, vouchWriteStatus } from './lib/ens-write.js';
 import { worldStatus, startSelfieCheck, pollSelfieCheck } from './lib/world.js';
 import QRCode from 'qrcode';
+import { widgetRouter } from './routes/widget.js';
 import {
   DROP, remaining, claimCount, allClaims,
   recentLog, onEvent, resetDemo, logEvent,
@@ -30,6 +31,9 @@ app.use((_req, res, next) => {
   next();
 });
 app.options('*', (_req, res) => res.sendStatus(204));
+
+// The embeddable widget: the product surface any site can drop in.
+app.use('/api', widgetRouter);
 
 /* ------------------------------- drop state ------------------------------ */
 

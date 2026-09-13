@@ -12,6 +12,7 @@
     "test": "node --test test/*.test.js"
   },
   "dependencies": {
+    "@resvg/resvg-js": "^2.6.2",
     "@worldcoin/idkit-core": "^4.2.4",
     "express": "^4.21.2",
     "qrcode": "^1.5.4",

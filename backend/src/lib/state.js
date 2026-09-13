@@ -84,6 +84,7 @@ export function onEvent(fn) {
 export function resetDemo() {
   claims = [];
   log = [];
+  vouchUses = new Map();
   listeners.emit('reset', {});
   logEvent({
     outcome: 'info',
@@ -91,4 +92,26 @@ export function resetDemo() {
     detail: 'Demo state reset. Inventory restored, claim ledger cleared.',
     actor: 'operator',
   });
+}
+
+/* ------------------------- widget verification uses ----------------------- */
+/* The drop demo counts claims against inventory. The embeddable widget counts
+   verifications instead, because "how many times may this agent get past a
+   CAPTCHA on your behalf" is the question a generic site is asking. Same vouch,
+   same on-chain cap, different unit. */
+
+let vouchUses = new Map();
+
+export function vouchUseCount(vouchName) {
+  return vouchUses.get(vouchName) ?? 0;
+}
+
+export function recordVouchUse(vouchName) {
+  const n = vouchUseCount(vouchName) + 1;
+  vouchUses.set(vouchName, n);
+  return n;
+}
+
+export function resetVouchUses() {
+  vouchUses = new Map();
 }
